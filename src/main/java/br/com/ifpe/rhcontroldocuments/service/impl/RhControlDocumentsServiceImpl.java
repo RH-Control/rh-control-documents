@@ -1,20 +1,25 @@
 package br.com.ifpe.rhcontroldocuments.service.impl;
 
 
+import br.com.ifpe.rhcontroldocuments.config.TopicosKafka;
+import br.com.ifpe.rhcontroldocuments.model.DiaAbonado;
 import br.com.ifpe.rhcontroldocuments.model.Documento;
 import br.com.ifpe.rhcontroldocuments.model.Funcionario;
+import br.com.ifpe.rhcontroldocuments.model.MessageKafka;
 import br.com.ifpe.rhcontroldocuments.repository.DocumentoRepository;
 import br.com.ifpe.rhcontroldocuments.repository.FuncionarioRepository;
 import br.com.ifpe.rhcontroldocuments.service.RhControlDocumentsService;
 import br.com.ifpe.rhcontroldocuments.utils.ConvertDiasAbonados;
 import com.amazonaws.services.s3.AmazonS3;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -34,6 +39,10 @@ public class RhControlDocumentsServiceImpl implements RhControlDocumentsService 
     @Autowired
     ConvertDiasAbonados convertDiasAbonados;
 
+    @Autowired
+    private KafkaTemplate<String, Serializable> kafkaTemplate;
+
+
     public Funcionario putDocumentS3(Long codigoFuncionario, MultipartFile multipartFile, String diasAbonados) throws Exception {
 
         String documentKey = UUID.randomUUID().toString();
@@ -51,12 +60,14 @@ public class RhControlDocumentsServiceImpl implements RhControlDocumentsService 
         File file = this.convertMultiPartToFile(multipartFile);
         amazonS3.putObject("rh-control-bucket", documentKey, file);
 
+        List<DiaAbonado> convertedDiasAbonados = convertDiasAbonados.convert(diasAbonados);
+
         Documento documento = new Documento();
         documento.setCodigoDocumento(documentKey);
         documento.setUrlDocumento(getObjectURL(documentKey));
         documento.setCodFuncionario(codigoFuncionario);
         documento.setDataEnvio(LocalDate.now());
-        documento.setDiasAbonados(convertDiasAbonados.convert(diasAbonados));
+        documento.setDiasAbonados(convertedDiasAbonados);
         documento.setDocumentoAprovado(false);
 
         documentos.add(documento);
@@ -65,20 +76,34 @@ public class RhControlDocumentsServiceImpl implements RhControlDocumentsService 
         documentoRepository.save(documento);
         funcionarioRepository.save(funcionario);
 
+        MessageKafka messageKafka = new MessageKafka();
+        messageKafka.setCodigoFuncionario(codigoFuncionario);
+        messageKafka.setDiasAbonados(convertedDiasAbonados);
+        messageKafka.setStatus("ATESTADO_EM_ANALISE");
+
+        kafkaTemplate.send(TopicosKafka.ATESTADO_TOPICO,messageKafka);
+
         return funcionario;
     }
 
     public Funcionario approveDocument(String codigoDocumento, Long codigoFuncionario) throws Exception {
 
         Funcionario funcionario = funcionarioRepository.findById(codigoFuncionario).orElseThrow(() -> new Exception("Funcionário não existe"));
+        MessageKafka messageKafka = new MessageKafka();
 
         funcionario.getDocumentos().forEach(documento -> {
             if(documento.getCodigoDocumento().equalsIgnoreCase(codigoDocumento)){
                 documento.setDocumentoAprovado(true);
+
+                messageKafka.setCodigoFuncionario(codigoFuncionario);
+                messageKafka.setDiasAbonados(documento.getDiasAbonados());
+                messageKafka.setStatus("ATESTADO");
             }
         });
 
         funcionarioRepository.save(funcionario);
+
+        kafkaTemplate.send(TopicosKafka.ATESTADO_TOPICO,messageKafka);
 
         return funcionario;
     }
