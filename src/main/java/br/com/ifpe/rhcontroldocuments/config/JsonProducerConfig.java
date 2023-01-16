@@ -1,8 +1,5 @@
 package br.com.ifpe.rhcontroldocuments.config;
 
-import java.io.Serializable;
-import java.util.HashMap;
-
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +10,9 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.support.serializer.JsonSerializer;
+
+import java.io.Serializable;
+import java.util.HashMap;
 
 @Configuration
 public class JsonProducerConfig {

@@ -1,6 +1,5 @@
 package br.com.ifpe.rhcontroldocuments.model;
 
-import java.beans.Transient;
 import java.io.Serializable;
 import java.util.List;
 

@@ -2,7 +2,7 @@ package br.com.ifpe.rhcontroldocuments.controller;
 
 import br.com.ifpe.rhcontroldocuments.model.Documento;
 import br.com.ifpe.rhcontroldocuments.model.Funcionario;
-import br.com.ifpe.rhcontroldocuments.service.impl.RhControlDocumentsServiceImpl;
+import br.com.ifpe.rhcontroldocuments.service.RhControlDocumentsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,20 +14,20 @@ import org.springframework.web.multipart.MultipartFile;
 public class RhControlDocumentsController {
 
     @Autowired
-    RhControlDocumentsServiceImpl service;
+    RhControlDocumentsService service;
 
     @PostMapping
     public ResponseEntity<Funcionario> uploadObjectS3(@RequestParam("file") MultipartFile file,
                                                       @RequestParam("codigoFuncionario") Long codigoFuncionario,
                                                       @RequestParam("diasAbonados") String diasAbonados
-                               ) throws Exception {
+    ) throws Exception {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.putDocumentS3(codigoFuncionario, file, diasAbonados));
     }
 
     @GetMapping("/approve")
-    public ResponseEntity<Funcionario> approveDocument(@RequestParam ("codigoDocumento") String codigoDocumento,
-                                                       @RequestParam ("codigoFuncionario") Long codigoFuncionario) throws Exception {
-       return ResponseEntity.ok().body(service.approveDocument(codigoDocumento,codigoFuncionario));
+    public ResponseEntity<Funcionario> approveDocument(@RequestParam("codigoDocumento") String codigoDocumento,
+                                                       @RequestParam("codigoFuncionario") Long codigoFuncionario) throws Exception {
+        return ResponseEntity.ok().body(service.approveDocument(codigoDocumento, codigoFuncionario));
     }
 
     @GetMapping("funcionario/{codigoFuncionario}")

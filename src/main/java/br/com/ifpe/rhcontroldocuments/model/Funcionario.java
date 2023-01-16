@@ -1,6 +1,9 @@
 package br.com.ifpe.rhcontroldocuments.model;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.util.List;
 
 @Entity

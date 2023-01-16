@@ -21,7 +21,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 
 @Service
@@ -53,7 +56,7 @@ public class RhControlDocumentsServiceImpl implements RhControlDocumentsService 
 
         Funcionario func = funcionarioRepository.findById(codigoFuncionario).orElse(funcionario);
 
-        if(Objects.nonNull(func.getDocumentos())) {
+        if (Objects.nonNull(func.getDocumentos())) {
             documentos.addAll(func.getDocumentos());
         }
 
@@ -81,7 +84,7 @@ public class RhControlDocumentsServiceImpl implements RhControlDocumentsService 
         messageKafka.setDiasAbonados(convertedDiasAbonados);
         messageKafka.setStatus("ATESTADO_EM_ANALISE");
 
-        kafkaTemplate.send(TopicosKafka.ATESTADO_TOPICO,messageKafka);
+        kafkaTemplate.send(TopicosKafka.ATESTADO_TOPICO, messageKafka);
 
         return funcionario;
     }
@@ -92,7 +95,7 @@ public class RhControlDocumentsServiceImpl implements RhControlDocumentsService 
         MessageKafka messageKafka = new MessageKafka();
 
         funcionario.getDocumentos().forEach(documento -> {
-            if(documento.getCodigoDocumento().equalsIgnoreCase(codigoDocumento)){
+            if (documento.getCodigoDocumento().equalsIgnoreCase(codigoDocumento)) {
                 documento.setDocumentoAprovado(true);
 
                 messageKafka.setCodigoFuncionario(codigoFuncionario);
@@ -103,7 +106,7 @@ public class RhControlDocumentsServiceImpl implements RhControlDocumentsService 
 
         funcionarioRepository.save(funcionario);
 
-        kafkaTemplate.send(TopicosKafka.ATESTADO_TOPICO,messageKafka);
+        kafkaTemplate.send(TopicosKafka.ATESTADO_TOPICO, messageKafka);
 
         return funcionario;
     }
@@ -114,7 +117,7 @@ public class RhControlDocumentsServiceImpl implements RhControlDocumentsService 
     }
 
     public Documento getDocumentoById(String codigoDocumento) throws Exception {
-        Documento documento = documentoRepository.findById(codigoDocumento).orElseThrow(()-> new Exception("Documento não existe"));
+        Documento documento = documentoRepository.findById(codigoDocumento).orElseThrow(() -> new Exception("Documento não existe"));
         return documento;
     }
 
